@@ -1,0 +1,205 @@
+    <section class="suite">
+      <h1>WrappedError</h1>
+      <dl>
+        <dt>Should give an instance of Error</dt>
+        <dd><pre><code>let error = new WrappedError();
+expect(error instanceof Error).to.be.true;</code></pre></dd>
+        <dt>Should be able to check error type definition</dt>
+        <dd><pre><code>let error = new WrappedError();
+expect(error.constructor).to.equal(WrappedError);
+expect(error.type).to.deep.equal({
+  name: 'UndefinedError',
+  message: 'Undefined error'
+});
+expect(error.name).to.equal('UndefinedError');
+expect(error.message).to.equal('Undefined error');
+expect(error.is(WrappedError.UNDEFINED_ERROR)).to.be.true;</code></pre></dd>
+        <dt>Should be able to give it's own type definition</dt>
+        <dd><pre><code>let errorType = {
+  name: 'CustomError',
+  message: 'A custom error was thrown'
+};
+let error = new WrappedError(errorType);
+expect(error.constructor).to.equal(WrappedError);
+expect(error.type).to.deep.equal({
+  name: 'CustomError',
+  message: 'A custom error was thrown'
+});
+expect(error.name).to.equal('CustomError');
+expect(error.message).to.equal('A custom error was thrown');
+expect(error.is(errorType)).to.be.true;</code></pre></dd>
+        <dt>Should allow to complet an error's data content</dt>
+        <dd><pre><code>let error = new WrappedError();
+WrappedError.wrap(error, null, {
+  key1: 'value'
+});
+expect(error.data).to.deep.equal({
+  key1: 'value'
+});</code></pre></dd>
+        <dt>Should allow to wrap an error</dt>
+        <dd><pre><code>let errorNative = new Error('any error');
+let error = WrappedError.wrap(errorNative);
+expect(error instanceof Error).to.be.true;
+expect(error.data.originalError).to.equal(errorNative);</code></pre></dd>
+        <dt>Should be able to wrap multiple errors in one</dt>
+        <dd><pre><code>let error1 = new Error('error 1');
+let error2 = new Error('error 2');
+let errorType = {
+  name: 'ErrorsReport',
+  message: 'More than one error occured'
+};
+let error = WrappedError.wrapMulti([error1, error2], errorType);
+expect(error.is(errorType)).to.be.true;
+expect(error.data.originalErrors).to.deep.equal([error1, error2]);</code></pre></dd>
+        <section class="suite">
+          <h1>getErrors</h1>
+          <dl>
+            <dt>Should return flattened errors list</dt>
+            <dd><pre><code>let types = {
+  ERROR1: {
+    name: 'erreur1',
+    message: 'Erreur 1'
+  },
+  ERROR2: {
+    name: 'erreur2',
+    message: 'Erreur 2'
+  },
+  ERROR3: {
+    name: 'erreur3',
+    message: 'Erreur 3'
+  }
+};
+let error1 = new WrappedError(types.ERROR1);
+let error2 = WrappedError.wrap(error1, types.ERROR2);
+let error3 = WrappedError.wrap(error2, types.ERROR3);
+expect(error3.getErrors()).to.deep.equal([
+  error1,
+  error2,
+  error3
+]);</code></pre></dd>
+            <dt>Should return flattened errors list even with multiwrapped error</dt>
+            <dd><pre><code>let types = {
+  ERROR1: {
+    name: 'erreur1',
+    message: 'Erreur 1'
+  },
+  ERROR2: {
+    name: 'erreur2',
+    message: 'Erreur 2'
+  },
+  ERROR3: {
+    name: 'erreur3',
+    message: 'Erreur 3'
+  }
+};
+let error1 = new WrappedError(types.ERROR1);
+let error2 = new WrappedError(types.ERROR2);
+let error3 = WrappedError.wrapMulti([error1, error2], types.ERROR3);
+expect(error3.getErrors()).to.deep.equal([
+  error1,
+  error2,
+  error3
+]);</code></pre></dd>
+            <dt>Should return flattened errors list even with multiwrapped error</dt>
+            <dd><pre><code>let types = {
+  ERROR1: {
+    name: 'erreur1',
+    message: 'Erreur 1'
+  },
+  ERROR2: {
+    name: 'erreur2',
+    message: 'Erreur 2'
+  },
+  ERROR3: {
+    name: 'erreur3',
+    message: 'Erreur 3'
+  }
+};
+let error1 = new WrappedError(types.ERROR1);
+let error2 = new WrappedError(types.ERROR2);
+let error3 = WrappedError.wrapMulti([error1, error2], types.ERROR3);
+expect(error3.getErrors()).to.deep.equal([
+  error1,
+  error2,
+  error3
+]);</code></pre></dd>
+            <dt>Should apply a map conversion function before returning the list of errors</dt>
+            <dd><pre><code>let types = {
+  ERROR1: {
+    name: 'erreur1',
+    message: 'Erreur 1'
+  },
+  ERROR2: {
+    name: 'erreur2',
+    message: 'Erreur 2'
+  },
+  ERROR3: {
+    name: 'erreur3',
+    message: 'Erreur 3'
+  },
+  ERROR4: {
+    name: 'erreur4',
+    message: 'Erreur 4'
+  },
+  ERROR5: {
+    name: 'erreur5',
+    message: 'Erreur 5'
+  }
+};
+let error1 = new WrappedError(types.ERROR1);
+let error2 = new WrappedError(types.ERROR2);
+let error3 = WrappedError.wrapMulti([error1, error2], types.ERROR3);
+let error4 = new WrappedError(types.ERROR4);
+let error5 = WrappedError.wrapMulti([error3, error4], types.ERROR5);
+expect(error5.getErrors(error =&gt; {
+  if (error === error2) {
+    return null;
+  }
+  return error;
+})).to.deep.equal([
+  error1,
+  error3,
+  error4,
+  error5
+]);</code></pre></dd>
+            <dt>Should filter out all child errors of a filtered out error</dt>
+            <dd><pre><code>let types = {
+  ERROR1: {
+    name: 'erreur1',
+    message: 'Erreur 1'
+  },
+  ERROR2: {
+    name: 'erreur2',
+    message: 'Erreur 2'
+  },
+  ERROR3: {
+    name: 'erreur3',
+    message: 'Erreur 3'
+  },
+  ERROR4: {
+    name: 'erreur4',
+    message: 'Erreur 4'
+  },
+  ERROR5: {
+    name: 'erreur5',
+    message: 'Erreur 5'
+  }
+};
+let error1 = new WrappedError(types.ERROR1);
+let error2 = new WrappedError(types.ERROR2);
+let error3 = WrappedError.wrapMulti([error1, error2], types.ERROR3);
+let error4 = new WrappedError(types.ERROR4);
+let error5 = WrappedError.wrapMulti([error3, error4], types.ERROR5);
+expect(error5.getErrors(error =&gt; {
+  if (error === error3) {
+    return null;
+  }
+  return error;
+})).to.deep.equal([
+  error4,
+  error5
+]);</code></pre></dd>
+          </dl>
+        </section>
+      </dl>
+    </section>
