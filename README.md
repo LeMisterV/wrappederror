@@ -6,7 +6,7 @@ This module allows you to wrap error objects inside other error objects, and to 
 This is a simple way to improve errors while catching them, and to get the complet detail/history of an error when you intent to do something out of this error.
 
 ``` javascript
-const WrappedError = require('wrappederror');
+const Werror = require('wrappederror');
 
 const errorTypes = {
   STRANGE_ERROR: {
