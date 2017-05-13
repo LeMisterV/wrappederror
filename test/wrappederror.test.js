@@ -77,6 +77,30 @@ module.exports = describe('WrappedError', () => {
     expect(error.data.originalErrors).to.deep.equal([error1, error2]);
   });
 
+  it('Should throw when trying to use invalid error type', () => {
+    expect(() => {
+      return new WrappedError({});
+    }).to.throw();
+  });
+
+  it('Should handle wrapping errors with same type and data conflict', () => {
+    const type = {
+      name: 'errortype',
+      message: 'error type'
+    };
+
+    const error1 = new WrappedError(type, { key: 'value1' });
+    const error2 = WrappedError.wrap(error1, type, { key: 'value2' });
+
+    expect(error2.data).to.deep.equal({
+      key: 'value2',
+      originalError: error1
+    });
+    expect(error1.data).to.deep.equal({
+      key: 'value1'
+    });
+  });
+
   describe('getErrors', () => {
     it('Should return flattened errors list', () => {
       let types = {

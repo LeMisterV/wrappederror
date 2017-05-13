@@ -3,17 +3,18 @@ module.exports = WrappedError;
 const stype = Symbol('type');
 const sdata = Symbol('data');
 
-function WrappedError (errortype, data) {
-  if (errortype && (!errortype.name || !errortype.message)) {
+function WrappedError (errortype = WrappedError.UNDEFINED_ERROR, data = {}) {
+  if (!errortype.name || !errortype.message) {
     throw new WrappedError(WrappedError.INVALID_TYPE_DEFINITION, {
       giventype: errortype
     });
   }
 
-  Error.captureStackTrace(this, WrappedError);
+  this[stype] = errortype;
+  this[sdata] = data;
 
-  this[stype] = errortype || WrappedError.UNDEFINED_ERROR;
-  this[sdata] = data || {};
+  // We have to set stype property (for name getter) before capturing stack
+  Error.captureStackTrace(this, WrappedError);
 }
 
 WrappedError.prototype = assign(
@@ -32,11 +33,11 @@ WrappedError.prototype = assign(
     },
 
     get name () {
-      return this[stype].name;
+      return this[stype] && this[stype].name;
     },
 
     get message () {
-      return this[stype].message;
+      return this[stype] && this[stype].message;
     },
 
     getErrors (map) {
@@ -61,39 +62,37 @@ assign(WrappedError,
       message: 'Error type definition should be an object defined with at least a name and a message'
     },
 
-    match (error, errortype, data) {
+    match (error, errortype, data = {}) {
       return (error instanceof WrappedError) &&
-        (!errortype || error.type === errortype) &&
-        !Object.keys(data).some(valueConflict.bind(null, data, error.data));
+        (!errortype || error[stype] === errortype) &&
+        !Object.keys(data).some(valueConflict.bind(null, data, error[sdata]));
     },
 
     wrapMulti (errors, errortype, data) {
-      let error = new WrappedError(errortype, data);
-      error.data.originalErrors = errors;
+      const error = new WrappedError(errortype, data);
+      error[sdata].originalErrors = errors;
 
       return error;
     },
 
     wrap (originalError, errortype, data) {
-      data = data || {};
-
       if (WrappedError.match(originalError, errortype, data)) {
-        Object.assign(originalError.data, data);
+        Object.assign(originalError[sdata], data);
         return originalError;
       }
 
-      let error = new WrappedError(errortype, data);
-      error.data.originalError = originalError;
+      const error = new WrappedError(errortype, data);
+      error[sdata].originalError = originalError;
 
       return error;
     }
   }
 );
 
-function assign (to) {
-  [].slice.call(arguments).slice(1).forEach((from) => {
+function assign (to, ...objects) {
+  objects.forEach((from) => {
     Object.keys(from).forEach((property) => {
-      let descriptor = Object.getOwnPropertyDescriptor(from, property);
+      const descriptor = Object.getOwnPropertyDescriptor(from, property);
 
       if (descriptor && (!descriptor.writable || !descriptor.configurable || !descriptor.enumerable || descriptor.get || descriptor.set)) {
         Object.defineProperty(to, property, descriptor);
@@ -107,30 +106,33 @@ function assign (to) {
 }
 
 function getErrorsRecurcif (error, map) {
-  if (map) {
-    error = map(error);
-  }
+  const errorValue = map ? map(error) : error;
 
-  if (!error) {
+  if (!errorValue) {
     return [];
   }
 
-  let errors = [error];
+  const hasNoParent = !error[sdata] ||
+    !(error[sdata].originalError || error[sdata].originalErrors);
 
-  if (!error.data) {
-    return errors;
+  if (hasNoParent) {
+    return [errorValue];
   }
 
-  if (error.data.originalError) {
-    let flatened = getErrorsRecurcif(error.data.originalError, map);
-    errors = flatened.concat(errors);
-  } else if (error.data.originalErrors) {
-    // Here we reverse errors array to get final errors array in the right order
-    error.data.originalErrors.reverse().forEach((error) => {
-      let flatened = getErrorsRecurcif(error, map);
-      errors = flatened.concat(errors);
-    });
+  if (error[sdata].originalError) {
+    let flatened = getErrorsRecurcif(error[sdata].originalError, map);
+    flatened.push(errorValue);
+    return flatened;
   }
+
+  let errors = [];
+
+  error[sdata].originalErrors.forEach((error) => {
+    const flatened = getErrorsRecurcif(error, map);
+    errors = errors.concat(flatened);
+  });
+
+  errors.push(errorValue);
 
   return errors;
 }

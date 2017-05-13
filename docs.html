@@ -51,6 +51,24 @@ let errorType = {
 let error = WrappedError.wrapMulti([error1, error2], errorType);
 expect(error.is(errorType)).to.be.true;
 expect(error.data.originalErrors).to.deep.equal([error1, error2]);</code></pre></dd>
+        <dt>Should throw when trying to use invalid error type</dt>
+        <dd><pre><code>expect(() =&gt; {
+  return new WrappedError({});
+}).to.throw();</code></pre></dd>
+        <dt>Should handle wrapping errors with same type and data conflict</dt>
+        <dd><pre><code>const type = {
+  name: 'errortype',
+  message: 'error type'
+};
+const error1 = new WrappedError(type, { key: 'value1' });
+const error2 = WrappedError.wrap(error1, type, { key: 'value2' });
+expect(error2.data).to.deep.equal({
+  key: 'value2',
+  originalError: error1
+});
+expect(error1.data).to.deep.equal({
+  key: 'value1'
+});</code></pre></dd>
         <section class="suite">
           <h1>getErrors</h1>
           <dl>
