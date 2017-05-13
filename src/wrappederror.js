@@ -32,6 +32,20 @@ WrappedError.prototype = assign(
       return this[sdata];
     },
 
+    get mergedData () {
+      const dataList = this.getErrors((error) => error[sdata]);
+
+      const merge = Object.assign({}, ...dataList);
+
+      if (this[sdata].originalError) {
+        delete merge.originalErrors;
+      } else if (this[sdata].originalErrors) {
+        delete merge.originalError;
+      }
+
+      return merge;
+    },
+
     get name () {
       return this[stype] && this[stype].name;
     },

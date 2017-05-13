@@ -272,4 +272,87 @@ module.exports = describe('WrappedError', () => {
       ]);
     });
   });
+
+  describe('mergedData', () => {
+    it('Should return a merge of all data from error and all parent error objects', () => {
+      const types = {
+        ERRORA: { name: 'errorA', message: 'errorA' },
+        ERRORB: { name: 'errorb', message: 'errorb' }
+      };
+      const errorA = new WrappedError(types.ERRORA, { dataA: 'valueA' });
+      const errorB = WrappedError.wrap(errorA, types.ERRORB, { dataB: 'valueB' });
+
+      expect(errorB.mergedData).to.deep.equal({
+        dataA: 'valueA',
+        dataB: 'valueB',
+        originalError: errorA
+      });
+    });
+
+    it('Should return error data if no parent error', () => {
+      const errorA = new WrappedError(undefined, { dataA: 'valueA' });
+
+      expect(errorA.mergedData).to.deep.equal({
+        dataA: 'valueA'
+      });
+    });
+
+    it('Should return a merge of all data from all errors even with multiwrapped errors', () => {
+      const types = {
+        ERRORA: { name: 'errorA', message: 'errorA' },
+        ERRORB: { name: 'errorb', message: 'errorb' },
+        ERRORC: { name: 'errorc', message: 'errorc' }
+      };
+      const errorA = new WrappedError(types.ERRORA, { dataA: 'valueA' });
+      const errorB = new WrappedError(types.ERRORB, { dataB: 'valueB' });
+      const errorC = WrappedError.wrapMulti([errorA, errorB], types.ERRORC, { dataC: 'valueC' });
+
+      expect(errorC.mergedData).to.deep.equal({
+        dataA: 'valueA',
+        dataB: 'valueB',
+        dataC: 'valueC',
+        originalErrors: [errorA, errorB]
+      });
+    });
+
+    it('Should merge data, keeping only most recent version of each value', () => {
+      const types = {
+        ERRORA: { name: 'errorA', message: 'errorA' },
+        ERRORB: { name: 'errorb', message: 'errorb' },
+        ERRORC: { name: 'errorc', message: 'errorc' },
+        ERRORD: { name: 'errord', message: 'errord' }
+      };
+      const errorA = new WrappedError(types.ERRORA, { dataA: 'valueA', dataC: 'valueA', dataD: 'valueA' });
+      const errorB = new WrappedError(types.ERRORB, { dataA: 'valueB' });
+      const errorC = WrappedError.wrap(errorB, types.ERRORC, { dataC: 'valueC' });
+      const errorD = WrappedError.wrapMulti([errorA, errorC], types.ERRORD, { dataD: 'valueD' });
+
+      expect(errorD.mergedData).to.deep.equal({
+        dataA: 'valueB',
+        dataC: 'valueC',
+        dataD: 'valueD',
+        originalErrors: [errorA, errorC]
+      });
+    });
+
+    it('Should merge data, keeping only originalError(s) property of subject', () => {
+      const types = {
+        ERRORA: { name: 'errorA', message: 'errorA' },
+        ERRORB: { name: 'errorb', message: 'errorb' },
+        ERRORC: { name: 'errorc', message: 'errorc' },
+        ERRORD: { name: 'errord', message: 'errord' }
+      };
+      const errorA = new WrappedError(types.ERRORA, { dataA: 'valueA', dataC: 'valueA', dataD: 'valueA' });
+      const errorB = new WrappedError(types.ERRORB, { dataA: 'valueB' });
+      const errorC = WrappedError.wrapMulti([errorA, errorB], types.ERRORC, { dataC: 'valueC' });
+      const errorD = WrappedError.wrap(errorC, types.ERRORD, { dataD: 'valueD' });
+
+      expect(errorD.mergedData).to.deep.equal({
+        dataA: 'valueB',
+        dataC: 'valueC',
+        dataD: 'valueD',
+        originalError: errorC
+      });
+    });
+  });
 });
