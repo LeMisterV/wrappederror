@@ -1,13 +1,13 @@
 {
   "name": "wrappederror",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Custom error type allowing to wrap errors one in another",
   "main": "src/wrappederror.js",
   "scripts": {
     "pre-commit": "npm run -s lint",
     "pre-push": "npm run -s test",
-    "lint": "semistandard",
-    "test": "mocha",
+    "lint": "eslint . -f ${ESLINT_FORMAT:-stylish}",
+    "test": "mocha -R ${REPORTER:-spec}",
     "coverage": "istanbul cover _mocha -- -R ${REPORTER:-spec}",
     "test-full": "istanbul cover _mocha -- -R mocha-multi --reporter-options ${REPORTER:-spec}=-,xunit=xunit.xml,doc=docs.html; istanbul report cobertura"
   },
@@ -26,11 +26,12 @@
   },
   "homepage": "https://github.com/LeMisterV/wrappederror#readme",
   "devDependencies": {
+    "captain-git-hook": "francetv/captain-git-hook",
     "chai": "^3.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
-    "mocha-multi": "^0.10.0",
-    "semistandard": "^9.2.1",
-    "sinon": "^1.17.7"
+    "mocha-multi": "^0.11.0",
+    "semistandard": "^11.0.0",
+    "sinon": "^2.2.0"
   }
 }
