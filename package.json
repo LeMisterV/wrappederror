@@ -6,8 +6,8 @@
   "scripts": {
     "pre-commit": "npm run -s lint",
     "pre-push": "npm run -s test",
-    "lint": "semistandard",
-    "test": "mocha",
+    "lint": "eslint . -f ${ESLINT_FORMAT:-stylish}",
+    "test": "mocha -R ${REPORTER:-spec}",
     "coverage": "istanbul cover _mocha -- -R ${REPORTER:-spec}",
     "test-full": "istanbul cover _mocha -- -R mocha-multi --reporter-options ${REPORTER:-spec}=-,xunit=xunit.xml,doc=docs.html; istanbul report cobertura"
   },
