@@ -26,11 +26,12 @@
   },
   "homepage": "https://github.com/LeMisterV/wrappederror#readme",
   "devDependencies": {
+    "captain-git-hook": "francetv/captain-git-hook",
     "chai": "^3.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
-    "mocha-multi": "^0.10.0",
-    "semistandard": "^9.2.1",
-    "sinon": "^1.17.7"
+    "mocha-multi": "^0.11.0",
+    "semistandard": "^11.0.0",
+    "sinon": "^2.2.0"
   }
 }
